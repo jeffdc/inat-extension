@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>iNat Links</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>iNat Links</h1>
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Search...">
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="todo">TODOs</button>
+      <button class="tab" data-tab="research">Research</button>
+    </nav>
+
+    <main>
+      <div id="todo-panel" class="panel active">
+        <div class="panel-header">
+          <label class="filter-completed">
+            <input type="checkbox" id="show-completed"> Show completed
+          </label>
+        </div>
+        <ul id="todo-list" class="item-list"></ul>
+      </div>
+
+      <div id="research-panel" class="panel">
+        <ul id="research-list" class="item-list"></ul>
+      </div>
+    </main>
+
+    <footer>
+      <button id="add-current" class="btn btn-primary">Add Current Page</button>
+      <div class="footer-actions">
+        <button id="export-btn" class="btn btn-small">Export</button>
+        <button id="import-btn" class="btn btn-small">Import</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display: none;">
+    </footer>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

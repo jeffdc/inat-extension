@@ -1,0 +1,47 @@
+{
+  "manifest_version": 2,
+  "name": "iNaturalist Link Manager",
+  "version": "0.1.0",
+  "description": "Manage and organize iNaturalist observation links",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "content_scripts": [{
+    "matches": ["*://*.inaturalist.org/observations/*"],
+    "js": ["content/content.js"]
+  }],
+  "sidebar_action": {
+    "default_title": "iNat Links",
+    "default_panel": "sidebar/sidebar.html",
+    "default_icon": "icons/icon-48.svg"
+  },
+  "browser_action": {
+    "default_title": "Add to iNat Links",
+    "default_icon": "icons/icon-48.svg"
+  },
+  "background": {
+    "scripts": ["lib/storage.js", "background/background.js"]
+  },
+  "commands": {
+    "quick-add-todo": {
+      "suggested_key": {
+        "default": "Alt+Ctrl+T",
+        "mac": "Alt+MacCtrl+T"
+      },
+      "description": "Quick add current observation as TODO"
+    },
+    "quick-add-research": {
+      "suggested_key": {
+        "default": "Alt+Ctrl+R",
+        "mac": "Alt+MacCtrl+R"
+      },
+      "description": "Quick add current observation as Research"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "inat-link-manager@local"
+    }
+  }
+}
