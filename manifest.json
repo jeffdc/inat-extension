@@ -10,7 +10,8 @@
   ],
   "content_scripts": [{
     "matches": ["*://*.inaturalist.org/*"],
-    "js": ["content/content.js"]
+    "js": ["content/dropdown.js", "content/content.js"],
+    "css": ["content/dropdown.css"]
   }],
   "sidebar_action": {
     "default_title": "iNat Links",
