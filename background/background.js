@@ -78,6 +78,26 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     case 'importData':
       return Storage.importData(message.jsonString);
 
+    case 'getNotifications':
+      return (async () => {
+        const response = await NotificationsAPI.getUpdates({
+          page: message.page || 1,
+          perPage: message.perPage || 20
+        });
+        return {
+          notifications: response.results.map(n => NotificationsAPI.normalizeNotification(n)),
+          totalResults: response.total_results,
+          page: response.page,
+          perPage: response.per_page
+        };
+      })();
+
+    case 'markNotificationRead':
+      return NotificationsAPI.markViewed(message.notificationId);
+
+    case 'markAllNotificationsRead':
+      return NotificationsAPI.markAllViewed();
+
     default:
       console.warn('Unknown message action:', message.action);
   }
