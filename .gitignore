@@ -1,0 +1,11 @@
+node_modules/
+web-ext-artifacts/
+*.xpi
+*.zip
+
+# API keys (if stored locally)
+.web-ext-api-key
+.env
+
+# Worktrees
+.worktrees/
