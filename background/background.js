@@ -98,6 +98,12 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     case 'markAllNotificationsRead':
       return NotificationsAPI.markAllViewed();
 
+    case 'openSidebarNotifications':
+      browser.sidebarAction.open();
+      // Note: We can't directly switch tabs in the sidebar from background
+      // The sidebar will need to check for a flag or the user switches manually
+      return true;
+
     default:
       console.warn('Unknown message action:', message.action);
   }
