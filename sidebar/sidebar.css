@@ -321,3 +321,160 @@ footer {
   resize: vertical;
   min-height: 60px;
 }
+
+/* Notifications panel styles */
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifications-filters {
+  display: flex;
+  gap: 12px;
+}
+
+.notifications-filters label {
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+}
+
+.notifications-filters input {
+  margin-right: 4px;
+}
+
+.notif-type-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.notif-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.notif-tab:hover {
+  background: #f5f5f5;
+}
+
+.notif-tab.active {
+  color: #74ac00;
+  border-bottom: 2px solid #74ac00;
+  font-weight: 500;
+}
+
+.notif-item {
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notif-item:hover {
+  background: #fafafa;
+}
+
+.notif-item.unread {
+  background: #f8fdf0;
+}
+
+.notif-item.unread:hover {
+  background: #f0f8e0;
+}
+
+.notif-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #74ac00;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notif-user-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eee;
+}
+
+.notif-user {
+  font-weight: 500;
+  flex: 1;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.notif-body {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  margin-left: 40px;
+}
+
+.notif-taxon {
+  font-style: italic;
+  color: #74ac00;
+}
+
+.notif-actions {
+  margin-top: 8px;
+  margin-left: 40px;
+}
+
+.notif-actions button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.notif-actions button:hover {
+  background: #f0f0f0;
+}
+
+.notif-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+#notif-page-info {
+  font-size: 12px;
+  color: #666;
+}
+
+.notif-loading,
+.notif-error,
+.notif-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.notif-error {
+  color: #c00;
+}
