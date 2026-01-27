@@ -3,6 +3,11 @@
 let currentTab = 'todo';
 let showCompleted = false;
 let searchQuery = '';
+let notifCurrentType = 'mention';
+let notifShowUnreadOnly = true;
+let notifPage = 1;
+let notifTotalPages = 1;
+let notificationsCache = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupExportImport();
   setupStorageListener();
   loadItems();
+  setupNotifications();
 });
 
 // Listen for storage changes (e.g., from keyboard shortcuts)
@@ -35,7 +41,11 @@ function setupTabs() {
       document.getElementById(panelId).classList.add('active');
 
       currentTab = tab.dataset.tab;
-      loadItems();
+      if (currentTab === 'notifications') {
+        loadNotifications();
+      } else {
+        loadItems();
+      }
     });
   });
 
@@ -400,6 +410,190 @@ function setupExportImport() {
 
     e.target.value = '';
   });
+}
+
+// Notifications panel setup
+function setupNotifications() {
+  // Type tabs
+  document.querySelectorAll('.notif-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelector('.notif-tab.active').classList.remove('active');
+      tab.classList.add('active');
+      notifCurrentType = tab.dataset.type;
+      renderNotifications();
+    });
+  });
+
+  // Unread/All filter
+  document.querySelectorAll('input[name="notif-filter"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      notifShowUnreadOnly = e.target.value === 'unread';
+      renderNotifications();
+    });
+  });
+
+  // Mark all read button
+  document.getElementById('mark-all-read-btn').addEventListener('click', handleMarkAllRead);
+
+  // Pagination
+  document.getElementById('notif-prev').addEventListener('click', () => {
+    if (notifPage > 1) {
+      notifPage--;
+      loadNotifications();
+    }
+  });
+
+  document.getElementById('notif-next').addEventListener('click', () => {
+    if (notifPage < notifTotalPages) {
+      notifPage++;
+      loadNotifications();
+    }
+  });
+}
+
+async function loadNotifications() {
+  const list = document.getElementById('notifications-list');
+  list.innerHTML = '<li class="notif-loading">Loading notifications...</li>';
+
+  try {
+    const response = await browser.runtime.sendMessage({
+      action: 'getNotifications',
+      page: notifPage,
+      perPage: 20
+    });
+
+    notificationsCache = response.notifications;
+    notifTotalPages = Math.ceil(response.totalResults / response.perPage) || 1;
+
+    updatePaginationUI();
+    renderNotifications();
+  } catch (error) {
+    console.error('Error loading notifications:', error);
+    list.innerHTML = `<li class="notif-error">Error: ${escapeHtml(error.message)}</li>`;
+  }
+}
+
+function updatePaginationUI() {
+  document.getElementById('notif-page-info').textContent = `Page ${notifPage} of ${notifTotalPages}`;
+  document.getElementById('notif-prev').disabled = notifPage <= 1;
+  document.getElementById('notif-next').disabled = notifPage >= notifTotalPages;
+}
+
+function renderNotifications() {
+  const list = document.getElementById('notifications-list');
+
+  let filtered = notificationsCache.filter(n => n.category === notifCurrentType);
+  if (notifShowUnreadOnly) {
+    filtered = filtered.filter(n => !n.viewed);
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<li class="notif-empty">No notifications</li>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(n => renderNotificationItem(n)).join('');
+
+  // Attach click handlers
+  list.querySelectorAll('.notif-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      handleNotificationClick(el.dataset.id, el.dataset.url);
+    });
+
+    const markBtn = el.querySelector('.mark-read-btn');
+    if (markBtn) {
+      markBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleMarkRead(el.dataset.id);
+      });
+    }
+  });
+}
+
+function renderNotificationItem(n) {
+  const timeAgo = formatTimeAgo(n.createdAt);
+
+  let action = '';
+  if (n.category === 'mention') action = 'mentioned you';
+  else if (n.category === 'comment') action = 'commented';
+  else if (n.category === 'identification') {
+    const taxon = n.taxon ? `<span class="notif-taxon">${escapeHtml(n.taxon.name)}</span>` : 'something';
+    action = `identified as ${taxon}`;
+  }
+
+  const bodyHtml = n.body ? `<div class="notif-body">${escapeHtml(n.body)}</div>` : '';
+
+  return `
+    <li class="notif-item ${n.viewed ? '' : 'unread'}" data-id="${n.id}" data-url="${n.observationUrl}">
+      <div class="notif-item-header">
+        ${!n.viewed ? '<span class="notif-unread-dot"></span>' : ''}
+        ${n.user.iconUrl ? `<img class="notif-user-icon" src="${n.user.iconUrl}" alt="">` : '<div class="notif-user-icon"></div>'}
+        <span class="notif-user">${escapeHtml(n.user.name)}</span>
+        <span class="notif-time">${timeAgo}</span>
+      </div>
+      <div class="notif-body">${action}</div>
+      ${bodyHtml}
+      <div class="notif-actions">
+        ${!n.viewed ? '<button class="mark-read-btn">Mark read</button>' : ''}
+      </div>
+    </li>
+  `;
+}
+
+function formatTimeAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return date.toLocaleDateString();
+}
+
+async function handleNotificationClick(id, url) {
+  // Mark as read
+  try {
+    await browser.runtime.sendMessage({
+      action: 'markNotificationRead',
+      notificationId: id
+    });
+    // Update local cache
+    const notif = notificationsCache.find(n => n.id === id);
+    if (notif) notif.viewed = true;
+    renderNotifications();
+  } catch (error) {
+    console.error('Error marking notification read:', error);
+  }
+
+  // Open observation
+  browser.tabs.create({ url });
+}
+
+async function handleMarkRead(id) {
+  try {
+    await browser.runtime.sendMessage({
+      action: 'markNotificationRead',
+      notificationId: id
+    });
+    const notif = notificationsCache.find(n => n.id === id);
+    if (notif) notif.viewed = true;
+    renderNotifications();
+  } catch (error) {
+    console.error('Error marking notification read:', error);
+  }
+}
+
+async function handleMarkAllRead() {
+  try {
+    await browser.runtime.sendMessage({ action: 'markAllNotificationsRead' });
+    notificationsCache.forEach(n => n.viewed = true);
+    renderNotifications();
+  } catch (error) {
+    console.error('Error marking all read:', error);
+  }
 }
 
 // Utility
