@@ -5,10 +5,11 @@
   "description": "Manage and organize iNaturalist observation links",
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "*://*.inaturalist.org/*"
   ],
   "content_scripts": [{
-    "matches": ["*://*.inaturalist.org/observations/*"],
+    "matches": ["*://*.inaturalist.org/*"],
     "js": ["content/content.js"]
   }],
   "sidebar_action": {
