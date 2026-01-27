@@ -114,19 +114,21 @@ const NotificationsDropdown = {
     }
 
     try {
-      const response = await browser.runtime.sendMessage({
-        action: 'getNotifications',
+      // Call API directly from content script (has cookie access)
+      const response = await NotificationsAPI.getUpdates({
         page: this.page,
         perPage: 20
       });
 
+      const normalized = response.results.map(n => NotificationsAPI.normalizeNotification(n));
+
       if (append) {
-        this.notifications = [...this.notifications, ...response.notifications];
+        this.notifications = [...this.notifications, ...normalized];
       } else {
-        this.notifications = response.notifications;
+        this.notifications = normalized;
       }
 
-      this.totalResults = response.totalResults;
+      this.totalResults = response.total_results;
       this.hasMore = this.notifications.length < this.totalResults;
       this.render();
     } catch (err) {
@@ -259,12 +261,9 @@ const NotificationsDropdown = {
     const url = el.dataset.url;
     const id = el.dataset.id;
 
-    // Mark as read
+    // Mark as read (call API directly from content script)
     try {
-      await browser.runtime.sendMessage({
-        action: 'markNotificationRead',
-        notificationId: id
-      });
+      await NotificationsAPI.markViewed(id);
     } catch (err) {
       console.error('[iNat Ext] Failed to mark as read:', err);
     }
@@ -276,7 +275,7 @@ const NotificationsDropdown = {
 
   async handleMarkAllRead() {
     try {
-      await browser.runtime.sendMessage({ action: 'markAllNotificationsRead' });
+      await NotificationsAPI.markAllViewed();
       // Update local state
       this.notifications.forEach(n => n.viewed = true);
       this.render();

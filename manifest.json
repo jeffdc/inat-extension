@@ -10,7 +10,7 @@
   ],
   "content_scripts": [{
     "matches": ["*://*.inaturalist.org/*"],
-    "js": ["content/dropdown.js", "content/content.js"],
+    "js": ["lib/notifications-api.js", "content/dropdown.js", "content/content.js"],
     "css": ["content/dropdown.css"]
   }],
   "sidebar_action": {
