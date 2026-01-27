@@ -17,6 +17,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="todo">TODOs</button>
       <button class="tab" data-tab="research">Research</button>
+      <button class="tab" data-tab="notifications">Notifications</button>
     </nav>
 
     <main>
@@ -31,6 +32,27 @@
 
       <div id="research-panel" class="panel">
         <ul id="research-list" class="item-list"></ul>
+      </div>
+
+      <div id="notifications-panel" class="panel">
+        <div class="panel-header notifications-header">
+          <div class="notifications-filters">
+            <label><input type="radio" name="notif-filter" value="unread" checked> Unread</label>
+            <label><input type="radio" name="notif-filter" value="all"> All</label>
+          </div>
+          <button id="mark-all-read-btn" class="btn-small">Mark all read</button>
+        </div>
+        <div class="notif-type-tabs">
+          <button class="notif-tab active" data-type="mention">Mentions</button>
+          <button class="notif-tab" data-type="comment">Comments</button>
+          <button class="notif-tab" data-type="identification">IDs</button>
+        </div>
+        <ul id="notifications-list" class="item-list"></ul>
+        <div class="notif-pagination">
+          <button id="notif-prev" class="btn-small" disabled>&larr; Prev</button>
+          <span id="notif-page-info">Page 1</span>
+          <button id="notif-next" class="btn-small">Next &rarr;</button>
+        </div>
       </div>
     </main>
 
