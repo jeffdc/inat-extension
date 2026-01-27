@@ -1,0 +1,218 @@
+/* iNat Link Manager - Notifications Dropdown */
+
+.inat-ext-dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99998;
+}
+
+.inat-ext-dropdown {
+  position: absolute;
+  width: 360px;
+  max-height: 500px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 99999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inat-ext-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
+.inat-ext-dropdown-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.inat-ext-mark-all-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #666;
+}
+
+.inat-ext-mark-all-btn:hover {
+  background: #f0f0f0;
+}
+
+.inat-ext-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+.inat-ext-tab {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.inat-ext-tab:hover {
+  background: #f5f5f5;
+}
+
+.inat-ext-tab.active {
+  color: #74ac00;
+  border-bottom: 2px solid #74ac00;
+  font-weight: 500;
+}
+
+.inat-ext-tab-badge {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  background: #e0e0e0;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.inat-ext-tab.active .inat-ext-tab-badge {
+  background: #74ac00;
+  color: #fff;
+}
+
+.inat-ext-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.inat-ext-notification {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.inat-ext-notification:hover {
+  background: #f9f9f9;
+}
+
+.inat-ext-notification.unread {
+  background: #f8fdf0;
+}
+
+.inat-ext-notification.unread:hover {
+  background: #f0f8e0;
+}
+
+.inat-ext-notification-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.inat-ext-notification-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eee;
+}
+
+.inat-ext-notification-user {
+  font-weight: 500;
+  flex: 1;
+}
+
+.inat-ext-notification-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.inat-ext-notification-body {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.inat-ext-notification-taxon {
+  font-style: italic;
+  color: #74ac00;
+}
+
+.inat-ext-dropdown-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+
+.inat-ext-footer-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #666;
+}
+
+.inat-ext-footer-btn:hover {
+  background: #f0f0f0;
+}
+
+.inat-ext-footer-btn.primary {
+  background: #74ac00;
+  color: #fff;
+  border-color: #74ac00;
+}
+
+.inat-ext-footer-btn.primary:hover {
+  background: #5d8a00;
+}
+
+.inat-ext-loading,
+.inat-ext-error,
+.inat-ext-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.inat-ext-error {
+  color: #c00;
+}
+
+.inat-ext-unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #74ac00;
+  border-radius: 50%;
+  margin-right: 6px;
+}
