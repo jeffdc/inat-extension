@@ -104,6 +104,13 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       // The sidebar will need to check for a flag or the user switches manually
       return true;
 
+    // Auth check (uses stored JWT)
+    case 'checkAuth':
+      return (async () => {
+        const jwt = await iNatAuth.getStoredJWT();
+        return !!jwt;
+      })();
+
     default:
       console.warn('Unknown message action:', message.action);
   }
