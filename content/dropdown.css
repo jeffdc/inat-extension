@@ -11,8 +11,8 @@
 
 .inat-ext-dropdown {
   position: absolute;
-  width: 360px;
-  max-height: 500px;
+  width: 380px;
+  max-height: 520px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -22,9 +22,10 @@
   color: #333;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
+/* Header */
 .inat-ext-dropdown-header {
   display: flex;
   justify-content: space-between;
@@ -32,6 +33,7 @@
   padding: 12px 16px;
   border-bottom: 1px solid #eee;
   background: #fafafa;
+  border-radius: 8px 8px 0 0;
 }
 
 .inat-ext-dropdown-title {
@@ -39,20 +41,12 @@
   font-size: 14px;
 }
 
-.inat-ext-mark-all-btn {
-  padding: 4px 8px;
-  font-size: 11px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  color: #666;
+.inat-ext-dropdown-count {
+  font-size: 12px;
+  color: #888;
 }
 
-.inat-ext-mark-all-btn:hover {
-  background: #f0f0f0;
-}
-
+/* Tabs */
 .inat-ext-tabs {
   display: flex;
   border-bottom: 1px solid #eee;
@@ -99,77 +93,102 @@
   color: #fff;
 }
 
+/* List */
 .inat-ext-list {
   flex: 1;
   overflow-y: auto;
-  max-height: 350px;
+  max-height: 360px;
 }
 
-.inat-ext-notification {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.inat-ext-notification:hover {
-  background: #f9f9f9;
-}
-
-.inat-ext-notification.unread {
-  background: #f8fdf0;
-}
-
-.inat-ext-notification.unread:hover {
-  background: #f0f8e0;
-}
-
-.inat-ext-notification-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.inat-ext-notification-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #eee;
-}
-
-.inat-ext-notification-user {
-  font-weight: 500;
-  flex: 1;
-}
-
-.inat-ext-notification-time {
-  font-size: 11px;
-  color: #999;
-}
-
-.inat-ext-notification-body {
+/* Hover preview popout - positioned outside scroll container */
+.inat-ext-preview {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  margin-right: 6px;
+  width: 300px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: #333;
+  gap: 10px;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.inat-ext-notification-taxon {
+.inat-ext-preview-photo {
+  width: 110px;
+  height: 110px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.inat-ext-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.inat-ext-preview-taxon {
   font-style: italic;
+  font-weight: 600;
+  color: #333;
+  font-size: 13px;
+}
+
+.inat-ext-preview-field {
+  color: #555;
+}
+
+.inat-ext-preview-value {
   color: #74ac00;
 }
 
+.inat-ext-preview-meta {
+  color: #555;
+  margin-top: 2px;
+}
+
+.inat-ext-preview-ids {
+  color: #74ac00;
+}
+
+.inat-ext-preview-grade {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid #74ac00;
+  border-radius: 3px;
+  color: #74ac00;
+  font-size: 11px;
+}
+
+.inat-ext-preview-link {
+  color: #74ac00;
+  text-decoration: none;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.inat-ext-preview-link:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
 .inat-ext-dropdown-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 10px 16px;
   border-top: 1px solid #eee;
   background: #fafafa;
+  gap: 8px;
+  border-radius: 0 0 8px 8px;
 }
 
 .inat-ext-footer-btn {
@@ -196,6 +215,7 @@
   background: #5d8a00;
 }
 
+/* States */
 .inat-ext-loading,
 .inat-ext-error,
 .inat-ext-empty {
@@ -208,11 +228,196 @@
   color: #c00;
 }
 
-.inat-ext-unread-dot {
+/* Login prompt */
+.inat-ext-login-prompt {
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.inat-ext-login-prompt p {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.inat-ext-login-btn {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  padding: 10px 20px;
   background: #74ac00;
-  border-radius: 50%;
-  margin-right: 6px;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.inat-ext-login-btn:hover {
+  background: #5d8a00;
+}
+
+/* Debug panel */
+.inat-ext-debug-panel {
+  position: fixed;
+  width: 620px;
+  max-height: 640px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 99999;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 11px;
+}
+
+.inat-ext-debug-header {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: #2d2d2d;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #404040;
+}
+
+.inat-ext-debug-source {
+  border-bottom: 1px solid #333;
+}
+
+.inat-ext-debug-source-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #252525;
+  padding-left: 11px;
+}
+
+.inat-ext-debug-copy-full {
+  margin-left: auto;
+}
+
+.inat-ext-debug-count {
+  font-weight: 400;
+  color: #888;
+  margin-left: 6px;
+}
+
+.inat-ext-debug-error {
+  font-weight: 400;
+  color: #f44;
+  margin-left: 6px;
+}
+
+.inat-ext-debug-item {
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.inat-ext-debug-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.inat-ext-debug-item-header:hover {
+  background: #2a2a2a;
+}
+
+.inat-ext-debug-cat {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.inat-ext-debug-cat-mention { background: #7b3fa0; color: #fff; }
+.inat-ext-debug-cat-comment { background: #2a7ab5; color: #fff; }
+.inat-ext-debug-cat-identification { background: #5cb85c; color: #fff; }
+
+.inat-ext-debug-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #aaa;
+  flex: 1;
+}
+
+.inat-ext-debug-copy-btn {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: inherit;
+  background: #333;
+  color: #aaa;
+  border: 1px solid #555;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.inat-ext-debug-summary strong {
+  color: #ddd;
+}
+
+.inat-ext-debug-item-body {
+  display: none;
+  padding: 6px 14px 10px;
+  background: #1a1a1a;
+}
+
+.inat-ext-debug-item.expanded .inat-ext-debug-item-body {
+  display: block;
+}
+
+.inat-ext-debug-field {
+  padding: 1px 0;
+  color: #aaa;
+}
+
+.inat-ext-debug-field strong {
+  color: #9cdcfe;
+}
+
+.inat-ext-debug-raw {
+  margin-top: 6px;
+}
+
+.inat-ext-debug-raw summary {
+  cursor: pointer;
+  color: #74ac00;
+  font-size: 11px;
+}
+
+.inat-ext-debug-raw pre {
+  margin: 4px 0 0;
+  padding: 8px;
+  background: #111;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 10px;
+  line-height: 1.4;
+  max-height: 300px;
+  overflow-y: auto;
+  color: #d4d4d4;
+}
+
+/* Source debugging (can remove later) */
+.inat-ext-source-html {
+  border-left: 2px solid #f0ad4e;
+}
+
+.inat-ext-source-api_v1 {
+  border-left: 2px solid #5cb85c;
+}
+
+.inat-ext-source-json {
+  border-left: 2px solid #5bc0de;
 }

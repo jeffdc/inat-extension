@@ -1,0 +1,101 @@
+/* Shared notification card styles for dropdown and sidebar */
+
+.inat-ext-notification {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.inat-ext-notification:hover {
+  background: #f9f9f9;
+}
+
+.inat-ext-notification.unread {
+  background: #f8fdf0;
+}
+
+.inat-ext-notification.unread:hover {
+  background: #f0f8e0;
+}
+
+.inat-ext-notification-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.inat-ext-notification-avatar,
+.inat-ext-notification-obs-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background: #eee;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.inat-ext-notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.inat-ext-notification-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.inat-ext-unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #74ac00;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.inat-ext-notification-user {
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inat-ext-notification-time {
+  font-size: 11px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.inat-ext-notification-action {
+  font-size: 12px;
+  color: #555;
+  margin-top: 2px;
+}
+
+.inat-ext-notification-sciname {
+  font-style: italic;
+  color: #74ac00;
+}
+
+.inat-ext-notification-obs-taxon {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.inat-ext-notification-comment {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}

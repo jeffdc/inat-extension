@@ -4,10 +4,9 @@ let currentTab = 'todo';
 let showCompleted = false;
 let searchQuery = '';
 let notifCurrentType = 'mention';
-let notifShowUnreadOnly = true;
 let notifPage = 1;
 let notifTotalPages = 1;
-let notificationsCache = [];
+let notifStore = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -180,7 +179,7 @@ function renderTodoItem(item) {
       <div class="item-header">
         <input type="checkbox" class="item-checkbox" ${item.completed ? 'checked disabled' : ''}>
         <div class="item-content">
-          <div class="item-title">${escapeHtml(title)}</div>
+          <div class="item-title">${NotificationUI.escapeHtml(title)}</div>
           ${item.note ? `<div class="item-note">${linkifyUrls(item.note)}</div>` : ''}
           <div class="item-meta">
             <span>Added ${date}</span>
@@ -205,11 +204,11 @@ function renderResearchItem(item) {
       <div class="item-header">
         ${item.thumbnailUrl ? `<img src="${item.thumbnailUrl}" class="item-thumbnail" alt="">` : ''}
         <div class="item-content">
-          <div class="item-title">${escapeHtml(title)}</div>
-          ${item.commonName && item.species ? `<div class="item-meta"><span>${escapeHtml(item.commonName)}</span></div>` : ''}
+          <div class="item-title">${NotificationUI.escapeHtml(title)}</div>
+          ${item.commonName && item.species ? `<div class="item-meta"><span>${NotificationUI.escapeHtml(item.commonName)}</span></div>` : ''}
           <div class="item-meta">
-            ${item.observer ? `<span>by ${escapeHtml(item.observer)}</span>` : ''}
-            ${item.location ? `<span>${escapeHtml(item.location)}</span>` : ''}
+            ${item.observer ? `<span>by ${NotificationUI.escapeHtml(item.observer)}</span>` : ''}
+            ${item.location ? `<span>${NotificationUI.escapeHtml(item.location)}</span>` : ''}
             <span>Added ${date}</span>
           </div>
           ${item.note ? `<div class="item-note">${linkifyUrls(item.note)}</div>` : ''}
@@ -331,10 +330,10 @@ function showEditDialog(item) {
   overlay.innerHTML = `
     <div class="dialog">
       <h2>Edit Note</h2>
-      <p class="dialog-subtitle">${escapeHtml(title)}</p>
+      <p class="dialog-subtitle">${NotificationUI.escapeHtml(title)}</p>
       <div class="form-group">
         <label for="edit-note">Note</label>
-        <textarea id="edit-note" placeholder="Add a note...">${escapeHtml(item.note || '')}</textarea>
+        <textarea id="edit-note" placeholder="Add a note...">${NotificationUI.escapeHtml(item.note || '')}</textarea>
       </div>
       <div class="dialog-buttons">
         <button class="btn btn-small" id="cancel-edit">Cancel</button>
@@ -414,6 +413,8 @@ function setupExportImport() {
 
 // Notifications panel setup
 function setupNotifications() {
+  notifStore = new Notifications.NotificationStore();
+
   // Type tabs
   document.querySelectorAll('.notif-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -423,17 +424,6 @@ function setupNotifications() {
       renderNotifications();
     });
   });
-
-  // Unread/All filter
-  document.querySelectorAll('input[name="notif-filter"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      notifShowUnreadOnly = e.target.value === 'unread';
-      renderNotifications();
-    });
-  });
-
-  // Mark all read button
-  document.getElementById('mark-all-read-btn').addEventListener('click', handleMarkAllRead);
 
   // Pagination
   document.getElementById('notif-prev').addEventListener('click', () => {
@@ -453,23 +443,108 @@ function setupNotifications() {
 
 async function loadNotifications() {
   const list = document.getElementById('notifications-list');
-  list.innerHTML = '<li class="notif-loading">Loading notifications...</li>';
+  list.innerHTML = '<div class="notif-loading">Loading notifications...</div>';
 
   try {
-    const response = await browser.runtime.sendMessage({
-      action: 'getNotifications',
-      page: notifPage,
-      perPage: 20
-    });
+    notifStore.clear();
 
-    notificationsCache = response.notifications;
-    notifTotalPages = Math.ceil(response.totalResults / response.perPage) || 1;
+    // Fetch from all three sources in parallel
+    const [apiResult, jsonResult, htmlResult] = await Promise.allSettled([
+      new Notifications.ApiV1Fetcher().fetch({ page: notifPage, perPage: 50 }),
+      new Notifications.JsonFetcher().fetch(),
+      new Notifications.HtmlFetcher().fetch()
+    ]);
+
+    console.log('[Sidebar] Fetch results:',
+      'api_v1:', apiResult.status,
+      'json:', jsonResult.status,
+      'html:', htmlResult.status
+    );
+
+    // Add API v1 results (IDs/comments)
+    if (apiResult.status === 'fulfilled') {
+      notifStore.add(apiResult.value.notifications);
+      notifTotalPages = Math.ceil((apiResult.value.total || 0) / 50) || 1;
+    }
+
+    // Add HTML mentions (has viewed fallback, more reliable)
+    if (htmlResult.status === 'fulfilled') {
+      const htmlMentions = htmlResult.value.notifications.filter(n => n.category === 'mention');
+      notifStore.add(htmlMentions);
+    }
+
+    // Add JSON mentions to supplement (unread only, may have better data)
+    if (jsonResult.status === 'fulfilled') {
+      const jsonMentions = jsonResult.value.notifications.filter(n => n.category === 'mention');
+      notifStore.add(jsonMentions);
+    }
+
+    // Check auth
+    if (notifStore.size === 0 && apiResult.status === 'rejected' &&
+        apiResult.reason?.message?.includes('Not authenticated')) {
+      showLoginPrompt();
+      return;
+    }
+
+    console.log('[Sidebar] Store counts:', notifStore.getCounts());
 
     updatePaginationUI();
     renderNotifications();
+
+    // Fetch observation details in background and re-render
+    enrichWithObservationData();
   } catch (error) {
     console.error('Error loading notifications:', error);
-    list.innerHTML = `<li class="notif-error">Error: ${escapeHtml(error.message)}</li>`;
+    if (error.message.includes('Not authenticated') || error.message.includes('Please visit')) {
+      showLoginPrompt();
+    } else {
+      list.innerHTML = `<div class="notif-error">Error: ${NotificationUI.escapeHtml(error.message)}</div>`;
+    }
+  }
+}
+
+function showLoginPrompt() {
+  const list = document.getElementById('notifications-list');
+  list.innerHTML = `
+    <div class="notif-login-prompt">
+      <p>Please visit iNaturalist.org while logged in to enable notifications.</p>
+      <p class="notif-login-help">The extension will automatically authenticate when you browse iNaturalist.</p>
+      <a href="https://www.inaturalist.org" target="_blank" class="btn btn-primary">Go to iNaturalist</a>
+    </div>
+  `;
+}
+
+async function enrichWithObservationData() {
+  // First resolve comment IDs to observation IDs for mentions
+  const mentions = notifStore.getByCategory('mention');
+  const commentIds = mentions
+    .filter(m => m.observationId?.startsWith('comment_'))
+    .map(m => m.observationId.replace('comment_', ''));
+
+  if (commentIds.length > 0) {
+    const commentMapping = await Notifications.resolveCommentIds(commentIds);
+    for (const m of mentions) {
+      if (m.observationId?.startsWith('comment_')) {
+        const commentId = m.observationId.replace('comment_', '');
+        const obsId = commentMapping[commentId];
+        if (obsId) {
+          m.observationId = obsId;
+          m.observationUrl = `https://www.inaturalist.org/observations/${obsId}#activity_comment_${commentId}`;
+        }
+      }
+    }
+  }
+
+  const obsIds = notifStore.getObservationIds();
+  if (obsIds.length === 0) return;
+
+  console.log('[Sidebar] Fetching', obsIds.length, 'observations for enrichment');
+  const observationsMap = await Notifications.fetchObservations(obsIds);
+
+  if (Object.keys(observationsMap).length > 0) {
+    notifStore.enrichWithObservations(observationsMap);
+    console.log('[Sidebar] Enriched notifications with observation data');
+    renderNotifications();
   }
 }
 
@@ -482,129 +557,34 @@ function updatePaginationUI() {
 function renderNotifications() {
   const list = document.getElementById('notifications-list');
 
-  let filtered = notificationsCache.filter(n => n.category === notifCurrentType);
-  if (notifShowUnreadOnly) {
-    filtered = filtered.filter(n => !n.viewed);
-  }
+  // Get filtered notifications from store
+  const filtered = notifStore.getByCategory(notifCurrentType);
+
+  console.log('[Sidebar] Rendering:', filtered.length, 'notifications for', notifCurrentType);
 
   if (filtered.length === 0) {
-    list.innerHTML = '<li class="notif-empty">No notifications</li>';
+    list.innerHTML = '<div class="notif-empty">No notifications</div>';
     return;
   }
 
-  list.innerHTML = filtered.map(n => renderNotificationItem(n)).join('');
+  list.innerHTML = filtered.map(n => NotificationUI.renderItem(n)).join('');
 
   // Attach click handlers
-  list.querySelectorAll('.notif-item').forEach(el => {
-    el.addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      handleNotificationClick(el.dataset.id, el.dataset.url);
+  list.querySelectorAll('.inat-ext-notification').forEach(el => {
+    el.addEventListener('click', () => {
+      handleNotificationClick(el.dataset.url);
     });
-
-    const markBtn = el.querySelector('.mark-read-btn');
-    if (markBtn) {
-      markBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleMarkRead(el.dataset.id);
-      });
-    }
   });
 }
 
-function renderNotificationItem(n) {
-  const timeAgo = formatTimeAgo(n.createdAt);
-
-  let action = '';
-  if (n.category === 'mention') action = 'mentioned you';
-  else if (n.category === 'comment') action = 'commented';
-  else if (n.category === 'identification') {
-    const taxon = n.taxon ? `<span class="notif-taxon">${escapeHtml(n.taxon.name)}</span>` : 'something';
-    action = `identified as ${taxon}`;
-  }
-
-  const bodyHtml = n.body ? `<div class="notif-body">${escapeHtml(n.body)}</div>` : '';
-
-  return `
-    <li class="notif-item ${n.viewed ? '' : 'unread'}" data-id="${n.id}" data-url="${n.observationUrl}">
-      <div class="notif-item-header">
-        ${!n.viewed ? '<span class="notif-unread-dot"></span>' : ''}
-        ${n.user.iconUrl ? `<img class="notif-user-icon" src="${n.user.iconUrl}" alt="">` : '<div class="notif-user-icon"></div>'}
-        <span class="notif-user">${escapeHtml(n.user.name)}</span>
-        <span class="notif-time">${timeAgo}</span>
-      </div>
-      <div class="notif-body">${action}</div>
-      ${bodyHtml}
-      <div class="notif-actions">
-        ${!n.viewed ? '<button class="mark-read-btn">Mark read</button>' : ''}
-      </div>
-    </li>
-  `;
-}
-
-function formatTimeAgo(dateString) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
-
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return date.toLocaleDateString();
-}
-
-async function handleNotificationClick(id, url) {
-  // Mark as read
-  try {
-    await browser.runtime.sendMessage({
-      action: 'markNotificationRead',
-      notificationId: id
-    });
-    // Update local cache
-    const notif = notificationsCache.find(n => n.id === id);
-    if (notif) notif.viewed = true;
-    renderNotifications();
-  } catch (error) {
-    console.error('Error marking notification read:', error);
-  }
-
-  // Open observation
+async function handleNotificationClick(url) {
+  // Open observation in new tab
   browser.tabs.create({ url });
 }
 
-async function handleMarkRead(id) {
-  try {
-    await browser.runtime.sendMessage({
-      action: 'markNotificationRead',
-      notificationId: id
-    });
-    const notif = notificationsCache.find(n => n.id === id);
-    if (notif) notif.viewed = true;
-    renderNotifications();
-  } catch (error) {
-    console.error('Error marking notification read:', error);
-  }
-}
-
-async function handleMarkAllRead() {
-  try {
-    await browser.runtime.sendMessage({ action: 'markAllNotificationsRead' });
-    notificationsCache.forEach(n => n.viewed = true);
-    renderNotifications();
-  } catch (error) {
-    console.error('Error marking all read:', error);
-  }
-}
-
 // Utility
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 function linkifyUrls(text) {
-  const escaped = escapeHtml(text);
+  const escaped = NotificationUI.escapeHtml(text);
   const urlPattern = /(https?:\/\/[^\s<]+)/g;
   return escaped.replace(urlPattern, '<a href="$1" class="note-link">$1</a>');
 }

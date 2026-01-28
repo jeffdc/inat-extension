@@ -10,8 +10,8 @@
   ],
   "content_scripts": [{
     "matches": ["*://*.inaturalist.org/*"],
-    "js": ["lib/notifications-api.js", "content/dropdown.js", "content/content.js"],
-    "css": ["content/dropdown.css"]
+    "js": ["lib/inat-auth.js", "lib/notifications.js", "lib/notification-ui.js", "content/dropdown.js", "content/content.js"],
+    "css": ["lib/notification-ui.css", "content/dropdown.css"]
   }],
   "sidebar_action": {
     "default_title": "iNat Links",
@@ -23,7 +23,7 @@
     "default_icon": "icons/icon-48.svg"
   },
   "background": {
-    "scripts": ["lib/storage.js", "lib/notifications-api.js", "background/background.js"]
+    "scripts": ["lib/storage.js", "lib/inat-auth.js", "lib/notifications-api.js", "background/background.js"]
   },
   "commands": {
     "quick-add-todo": {
