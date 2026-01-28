@@ -1,0 +1,15 @@
+{
+  "name": "inat-link-manager",
+  "version": "0.2.0",
+  "description": "Firefox extension for managing iNaturalist observation links",
+  "private": true,
+  "scripts": {
+    "lint": "web-ext lint",
+    "build": "web-ext build --overwrite-dest",
+    "dev": "web-ext run",
+    "sign": "source .env && web-ext sign --channel=unlisted --api-key=$AMO_API_KEY --api-secret=$AMO_API_SECRET"
+  },
+  "devDependencies": {
+    "web-ext": "^8.0.0"
+  }
+}
