@@ -15,3 +15,10 @@ web-ext-artifacts/
 
 # Worktrees
 .worktrees/
+
+# Local tooling state
+.beads/
+.claude/
+
+# web-ext config (local paths)
+web-ext-config.cjs
