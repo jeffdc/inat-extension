@@ -45,6 +45,16 @@ npm run build
 npm run sign
 ```
 
+## Releasing
+
+1. Bump the version in both `manifest.json` and `package.json`
+2. Commit all changes
+3. Sign the extension: `npm run sign` (produces a signed `.xpi` in `web-ext-artifacts/`)
+4. Create a GitHub release with the signed `.xpi`:
+   ```bash
+   gh release create v0.X.0 web-ext-artifacts/*.xpi --title "v0.X.0" --notes "Release notes here"
+   ```
+
 ## License
 
 MIT

@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "iNaturalist Link Manager",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Manage and organize iNaturalist observation links",
   "permissions": [
     "storage",
@@ -10,7 +10,7 @@
   ],
   "content_scripts": [{
     "matches": ["*://*.inaturalist.org/*"],
-    "js": ["lib/inat-auth.js", "lib/notifications.js", "lib/notification-ui.js", "content/dropdown.js", "content/content.js"],
+    "js": ["lib/inat-auth.js", "lib/notifications.js", "lib/notification-ui.js", "lib/notification-controller.js", "content/dropdown.js", "content/content.js"],
     "css": ["lib/notification-ui.css", "content/dropdown.css"]
   }],
   "sidebar_action": {

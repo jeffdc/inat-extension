@@ -350,6 +350,28 @@ footer {
   font-weight: 500;
 }
 
+.notif-tab-badge {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+  margin-left: 4px;
+  background: #e0e0e0;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.notif-tab-badge:empty {
+  display: none;
+}
+
+.notif-tab.active .notif-tab-badge {
+  background: #74ac00;
+  color: #fff;
+}
+
 .notif-pagination {
   display: flex;
   justify-content: center;

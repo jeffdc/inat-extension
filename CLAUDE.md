@@ -30,5 +30,13 @@ A Firefox extension for managing links to iNaturalist observations. Supports two
 ```
 
 ## Commands
-- `npm run build` - Build extension (TBD)
-- `npm run dev` - Development mode (TBD)
+- `npm run dev` - Run in Firefox with auto-reload
+- `npm run lint` - Lint with web-ext
+- `npm run build` - Build unsigned zip
+- `npm run sign` - Sign via AMO (requires `.env` with `AMO_API_KEY` and `AMO_API_SECRET`)
+
+## Release Process
+1. Bump version in both `manifest.json` and `package.json`
+2. Commit all changes
+3. `npm run sign` - produces a signed `.xpi` in `web-ext-artifacts/`
+4. `gh release create v<version> web-ext-artifacts/*.xpi --title "v<version>" --notes "..."` - creates GitHub release with the signed `.xpi` attached

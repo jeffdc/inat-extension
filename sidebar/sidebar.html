@@ -37,9 +37,9 @@
 
       <div id="notifications-panel" class="panel">
         <div class="notif-type-tabs">
-          <button class="notif-tab active" data-type="mention">Mentions</button>
-          <button class="notif-tab" data-type="comment">Comments</button>
-          <button class="notif-tab" data-type="identification">IDs</button>
+          <button class="notif-tab active" data-type="mention">Mentions<span class="notif-tab-badge"></span></button>
+          <button class="notif-tab" data-type="comment">Comments<span class="notif-tab-badge"></span></button>
+          <button class="notif-tab" data-type="identification">IDs<span class="notif-tab-badge"></span></button>
         </div>
         <div id="notifications-list" class="item-list"></div>
         <div class="notif-pagination">
@@ -62,6 +62,7 @@
 
   <script src="../lib/notifications.js"></script>
   <script src="../lib/notification-ui.js"></script>
+  <script src="../lib/notification-controller.js"></script>
   <script src="sidebar.js"></script>
 </body>
 </html>

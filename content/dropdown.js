@@ -3,17 +3,21 @@
 const NotificationsDropdown = {
   dropdown: null,
   overlay: null,
-  store: null,
+  controller: null,
   debugPanel: null,
-  debugData: null,
   currentTab: 'mention',
-  isLoading: false,
-  error: null,
   bypassNextClick: false,
 
   // Initialize - find and hook the notification bell
   init() {
-    this.store = new Notifications.NotificationStore();
+    this.controller = new NotificationController({
+      onUpdate: () => this.render(),
+      onError: (type) => {
+        if (type === 'auth' && this.dropdown) {
+          this.dropdown.innerHTML = this.renderLoginPrompt();
+        }
+      }
+    });
     this.findAndHookBell();
     // Re-check periodically for SPA navigation
     setInterval(() => this.findAndHookBell(), 2000);
@@ -123,85 +127,33 @@ const NotificationsDropdown = {
       this.debugPanel = null;
     }
     // Reset state
-    this.store.clear();
-    this.debugData = null;
+    this.controller.store.clear();
+    this.controller.debugData = null;
     this.debugRawMap = null;
   },
 
   async loadNotifications() {
-    if (this.isLoading) return;
-
-    this.isLoading = true;
-    this.error = null;
-    this.store.clear();
-
-    this.dropdown.innerHTML = this.renderLoading();
-
-    try {
-      // Fetch from multiple sources in parallel
-      const [apiResult, jsonResult, htmlResult] = await Promise.allSettled([
-        new Notifications.ApiV1Fetcher().fetch({ page: 1, perPage: 50 }),
-        new Notifications.JsonFetcher().fetch(),
-        new Notifications.HtmlFetcher().fetch()
-      ]);
-
-      // Stash raw results for debug panel
-      this.debugData = { apiResult, jsonResult, htmlResult };
-
-      // Add API v1 results (best data for IDs/comments)
-      if (apiResult.status === 'fulfilled') {
-        this.store.add(apiResult.value.notifications);
-      }
-
-      // Try JSON for mentions
-      if (jsonResult.status === 'fulfilled') {
-        const jsonMentions = jsonResult.value.notifications.filter(n => n.category === 'mention');
-        this.store.add(jsonMentions);
-      }
-
-      // Add HTML mentions as fallback
-      if (htmlResult.status === 'fulfilled') {
-        const htmlMentions = htmlResult.value.notifications.filter(n => n.category === 'mention');
-        this.store.add(htmlMentions);
-      }
-
-      // Check auth
-      if (this.store.size === 0 && apiResult.status === 'rejected' &&
-          apiResult.reason?.message?.includes('Not authenticated')) {
-        this.dropdown.innerHTML = this.renderLoginPrompt();
-        this.isLoading = false;
-        return;
-      }
-
-      // Render immediately with what we have
-      this.render();
-
-      // Then fetch observation details in background and re-render
-      this.enrichWithObservationData();
-    } catch (err) {
-      console.error('[iNat Ext] Failed to load notifications:', err);
-      this.error = err.message;
-      this.render();
-    } finally {
-      this.isLoading = false;
+    if (this.dropdown) {
+      this.dropdown.innerHTML = this.renderLoading();
     }
+    await this.controller.load({ page: 1, perPage: 50 });
   },
 
   render() {
     if (!this.dropdown) return;
 
-    if (this.error) {
+    if (this.controller.error) {
       this.dropdown.innerHTML = this.renderError();
       return;
     }
 
-    const counts = this.store.getCounts();
-    const filtered = this.store.getByCategory(this.currentTab);
+    const counts = this.controller.store.getCounts();
+    const filtered = this.controller.store.getByCategory(this.currentTab);
 
     this.dropdown.innerHTML = `
       <div class="inat-ext-dropdown-header">
         <span class="inat-ext-dropdown-title">Notifications</span>
-        <span class="inat-ext-dropdown-count">${this.store.size} total</span>
+        <span class="inat-ext-dropdown-count">${this.controller.store.size} total</span>
       </div>
       <div class="inat-ext-tabs">
         <button class="inat-ext-tab ${this.currentTab === 'mention' ? 'active' : ''}" data-tab="mention">
@@ -233,7 +185,7 @@ const NotificationsDropdown = {
   },
 
   renderError() {
-    return `<div class="inat-ext-error">Error: ${NotificationUI.escapeHtml(this.error)}</div>`;
+    return `<div class="inat-ext-error">Error: ${NotificationUI.escapeHtml(this.controller.error)}</div>`;
   },
 
   renderEmpty() {
@@ -288,7 +240,7 @@ const NotificationsDropdown = {
 
     // Hover preview popout
     const preview = this.dropdown.querySelector('.inat-ext-preview');
-    const filtered = this.store.getByCategory(this.currentTab);
+    const filtered = this.controller.store.getByCategory(this.currentTab);
     const notifMap = {};
     for (const n of filtered) {
       notifMap[n.id] = n;
@@ -340,41 +292,6 @@ const NotificationsDropdown = {
     this.close();
   },
 
-  async enrichWithObservationData() {
-    // First resolve comment IDs to observation IDs for mentions
-    const mentions = this.store.getByCategory('mention');
-    const commentIds = mentions
-      .filter(m => m.observationId?.startsWith('comment_'))
-      .map(m => m.observationId.replace('comment_', ''));
-
-    if (commentIds.length > 0) {
-      const commentMapping = await Notifications.resolveCommentIds(commentIds);
-
-      // Update mentions with resolved observation IDs
-      for (const m of mentions) {
-        if (m.observationId?.startsWith('comment_')) {
-          const commentId = m.observationId.replace('comment_', '');
-          const obsId = commentMapping[commentId];
-          if (obsId) {
-            m.observationId = obsId;
-            m.observationUrl = `https://www.inaturalist.org/observations/${obsId}#activity_comment_${commentId}`;
-          }
-        }
-      }
-    }
-
-    // Now get all observation IDs and fetch data
-    const obsIds = this.store.getObservationIds();
-    if (obsIds.length === 0) return;
-
-    const observationsMap = await Notifications.fetchObservations(obsIds);
-
-    if (Object.keys(observationsMap).length > 0) {
-      this.store.enrichWithObservations(observationsMap);
-      this.render();
-    }
-  },
-
   showNativeDropdown() {
     const bell = document.querySelector('[data-inat-ext-hooked="true"]');
     if (!bell) {
@@ -393,7 +310,7 @@ const NotificationsDropdown = {
       this.debugPanel = null;
       return;
     }
-    if (!this.debugData) return;
+    if (!this.controller.debugData) return;
 
     this.debugPanel = document.createElement('div');
     this.debugPanel.className = 'inat-ext-debug-panel';
@@ -445,7 +362,7 @@ const NotificationsDropdown = {
   },
 
   renderDebugPanel() {
-    const { apiResult, jsonResult, htmlResult } = this.debugData;
+    const { apiResult, jsonResult, htmlResult } = this.controller.debugData;
 
     const sources = [
       { name: 'API v1', key: 'api_v1', result: apiResult, color: '#5cb85c' },

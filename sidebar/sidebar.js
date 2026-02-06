@@ -5,8 +5,7 @@ let showCompleted = false;
 let searchQuery = '';
 let notifCurrentType = 'mention';
 let notifPage = 1;
-let notifTotalPages = 1;
-let notifStore = null;
+let notifController = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -413,7 +412,18 @@ function setupExportImport() {
 
 // Notifications panel setup
 function setupNotifications() {
-  notifStore = new Notifications.NotificationStore();
+  notifController = new NotificationController({
+    onUpdate: () => {
+      updateBadges();
+      updatePaginationUI();
+      renderNotifications();
+    },
+    onError: (type) => {
+      if (type === 'auth') {
+        showLoginPrompt();
+      }
+    }
+  });
 
   // Type tabs
   document.querySelectorAll('.notif-tab').forEach(tab => {
@@ -434,7 +444,7 @@ function setupNotifications() {
   });
 
   document.getElementById('notif-next').addEventListener('click', () => {
-    if (notifPage < notifTotalPages) {
+    if (notifPage < notifController.totalPages) {
       notifPage++;
       loadNotifications();
     }
@@ -444,63 +454,7 @@ function setupNotifications() {
 async function loadNotifications() {
   const list = document.getElementById('notifications-list');
   list.innerHTML = '<div class="notif-loading">Loading notifications...</div>';
-
-  try {
-    notifStore.clear();
-
-    // Fetch from all three sources in parallel
-    const [apiResult, jsonResult, htmlResult] = await Promise.allSettled([
-      new Notifications.ApiV1Fetcher().fetch({ page: notifPage, perPage: 50 }),
-      new Notifications.JsonFetcher().fetch(),
-      new Notifications.HtmlFetcher().fetch()
-    ]);
-
-    console.log('[Sidebar] Fetch results:',
-      'api_v1:', apiResult.status,
-      'json:', jsonResult.status,
-      'html:', htmlResult.status
-    );
-
-    // Add API v1 results (IDs/comments)
-    if (apiResult.status === 'fulfilled') {
-      notifStore.add(apiResult.value.notifications);
-      notifTotalPages = Math.ceil((apiResult.value.total || 0) / 50) || 1;
-    }
-
-    // Add HTML mentions (has viewed fallback, more reliable)
-    if (htmlResult.status === 'fulfilled') {
-      const htmlMentions = htmlResult.value.notifications.filter(n => n.category === 'mention');
-      notifStore.add(htmlMentions);
-    }
-
-    // Add JSON mentions to supplement (unread only, may have better data)
-    if (jsonResult.status === 'fulfilled') {
-      const jsonMentions = jsonResult.value.notifications.filter(n => n.category === 'mention');
-      notifStore.add(jsonMentions);
-    }
-
-    // Check auth
-    if (notifStore.size === 0 && apiResult.status === 'rejected' &&
-        apiResult.reason?.message?.includes('Not authenticated')) {
-      showLoginPrompt();
-      return;
-    }
-
-    console.log('[Sidebar] Store counts:', notifStore.getCounts());
-
-    updatePaginationUI();
-    renderNotifications();
-
-    // Fetch observation details in background and re-render
-    enrichWithObservationData();
-  } catch (error) {
-    console.error('Error loading notifications:', error);
-    if (error.message.includes('Not authenticated') || error.message.includes('Please visit')) {
-      showLoginPrompt();
-    } else {
-      list.innerHTML = `<div class="notif-error">Error: ${NotificationUI.escapeHtml(error.message)}</div>`;
-    }
-  }
+  await notifController.load({ page: notifPage, perPage: 50 });
 }
 
 function showLoginPrompt() {
@@ -514,53 +468,29 @@ function showLoginPrompt() {
   `;
 }
 
-async function enrichWithObservationData() {
-  // First resolve comment IDs to observation IDs for mentions
-  const mentions = notifStore.getByCategory('mention');
-  const commentIds = mentions
-    .filter(m => m.observationId?.startsWith('comment_'))
-    .map(m => m.observationId.replace('comment_', ''));
-
-  if (commentIds.length > 0) {
-    const commentMapping = await Notifications.resolveCommentIds(commentIds);
-    for (const m of mentions) {
-      if (m.observationId?.startsWith('comment_')) {
-        const commentId = m.observationId.replace('comment_', '');
-        const obsId = commentMapping[commentId];
-        if (obsId) {
-          m.observationId = obsId;
-          m.observationUrl = `https://www.inaturalist.org/observations/${obsId}#activity_comment_${commentId}`;
-        }
-      }
+function updateBadges() {
+  const counts = notifController.store.getCounts();
+  document.querySelectorAll('.notif-tab').forEach(tab => {
+    const type = tab.dataset.type;
+    const badge = tab.querySelector('.notif-tab-badge');
+    if (badge && counts[type] != null) {
+      badge.textContent = counts[type];
     }
-  }
-
-  const obsIds = notifStore.getObservationIds();
-  if (obsIds.length === 0) return;
-
-  console.log('[Sidebar] Fetching', obsIds.length, 'observations for enrichment');
-  const observationsMap = await Notifications.fetchObservations(obsIds);
-
-  if (Object.keys(observationsMap).length > 0) {
-    notifStore.enrichWithObservations(observationsMap);
-    console.log('[Sidebar] Enriched notifications with observation data');
-    renderNotifications();
-  }
+  });
 }
 
 function updatePaginationUI() {
-  document.getElementById('notif-page-info').textContent = `Page ${notifPage} of ${notifTotalPages}`;
+  const totalPages = notifController.totalPages;
+  document.getElementById('notif-page-info').textContent = `Page ${notifPage} of ${totalPages}`;
   document.getElementById('notif-prev').disabled = notifPage <= 1;
-  document.getElementById('notif-next').disabled = notifPage >= notifTotalPages;
+  document.getElementById('notif-next').disabled = notifPage >= totalPages;
 }
 
 function renderNotifications() {
   const list = document.getElementById('notifications-list');
 
   // Get filtered notifications from store
-  const filtered = notifStore.getByCategory(notifCurrentType);
-
-  console.log('[Sidebar] Rendering:', filtered.length, 'notifications for', notifCurrentType);
+  const filtered = notifController.store.getByCategory(notifCurrentType);
 
   if (filtered.length === 0) {
     list.innerHTML = '<div class="notif-empty">No notifications</div>';
